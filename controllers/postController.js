@@ -17,7 +17,6 @@ class PostController {
     async getPosts(req, res) {
         try {
             const page = req.query.page
-            console.log(page)
             const posts = await Post.find({}).sort({"date": -1, "_id": 1}).skip(2*(page-1)).limit(2)
             
             //hiding information about the author
@@ -37,31 +36,51 @@ class PostController {
     async likePost(req, res) {
         try {
             const user = await User.findOne({"_id": req.user.id})
+            const post = await Post.findOne({"_id": req.body.post._id})
 
-            // liked 1
-            // disliked 0
-            // like 1
-            // 0
-            if (!user.likedId.includes(req.body.post.id)) {
-                // add id to likedId
-                user.likedId.push(req.body.post.id)
-                await user.save()
-    
-                // increase reputation of the post
-                const post = await Post.findOne({"_id": req.body.post.id})
-                post.reputation += 1
-                await post.save()
-                
-                return res.json(200)
+            if (req.body.type) { // if liked
+                var index = user.likedId.indexOf(req.body.post._id)
+                if (index != -1) { // if liked the same post again
+                    user.likedId.splice(index, 1)
+                    post.reputation -= 1
+                }
+                else {
+                    var index = user.dislikedId.indexOf(req.body.post._id)
+                    if (index != -1) { // if liked a disliked post
+                        user.dislikedId.splice(index, 1)
+                        post.reputation += 2
+                    }
+                    else {
+                        post.reputation += 1
+                    }
+                    user.likedId.push(req.body.post._id)
+                }
             }
-            else {
-                return res.json({message: "Already liked"})
+            else { // if disliked
+                var index = user.dislikedId.indexOf(req.body.post._id)
+                if (index != -1) { // if disliked the same post again
+                    user.dislikedId.splice(index, 1)
+                    post.reputation += 1
+                }
+                else {
+                    var index = user.likedId.indexOf(req.body.post._id)
+                    if (index != -1) { // if disliked liked post
+                        user.likedId.splice(index, 1)
+                        post.reputation -= 2
+                    }
+                    else {
+                        post.reputation -= 1
+                    }
+                    user.dislikedId.push(req.body.post._id)
+                }
             }
+            await post.save()
+            await user.save()
 
-
+            return res.json(200)
         } catch (e) {
             console.log(e)
-            return res.json(400).json({message: "Can't like post"})
+            return res.json(400).json({message: "Can't react to post"})
         }
     }
 }
