@@ -130,6 +130,9 @@ router.post("/login",
         user: {
           id: user.id,
           email: user.email,
+          reputation: user.reputation,
+          likedId: user.likedId,
+          dislikedId: user.dislikedId,
           verified: user.verified
         }
       })
@@ -150,6 +153,9 @@ router.get("/auth", authMiddlware,
         user: {
           id: user.id,
           email: user.email,
+          reputation: user.reputation,
+          likedId: user.likedId,
+          dislikedId: user.dislikedId,
           verified: user.verified
         }
       })
